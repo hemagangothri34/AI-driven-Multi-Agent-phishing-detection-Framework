@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - FinTech Shield AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        /* Custom App styles */
+        body {
+            background-color: #030712; /* gray-950 */
+        }
+        
+        .glass-panel {
+            background: rgba(3, 7, 18, 0.75); /* Darker for better contrast */
+            backdrop-filter: blur(16px) saturate(150%);
+            -webkit-backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.08); /* Slightly brighter border */
+        }
+        
+        .sidebar {
+            background: rgba(3, 7, 18, 0.8);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            border-left: 3px solid #6366f1;
+            color: white;
+        }
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .input-glow:focus {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+            border-color: #6366f1;
+        }
+        
+        .danger-glow { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+        .safe-glow { box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+        
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        
+        .hero-bg {
+            background-image: url('{{ url_for("static", filename="images/dashboard_hero_1772885700341.png") }}');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.25; /* Slightly higher opacity to show off the premium neural background */
+            mix-blend-mode: screen; /* Brighter blending */
+        }
+    </style>
+</head>
+<body class="text-gray-100 h-screen overflow-hidden font-sans selection:bg-indigo-500 selection:text-white flex">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar w-64 h-full flex flex-col flex-shrink-0 z-20 hidden md:flex relative">
+        <div class="h-16 flex items-center px-6 border-b border-gray-800">
+            <div class="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center mr-3 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            <span class="font-bold text-lg tracking-wide text-white">Shield AI</span>
+        </div>
+
+        <nav class="flex-grow py-6 flex flex-col gap-2">
+            <div class="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Main Menu</div>
+            
+            <a href="{{ url_for('dashboard') }}" class="nav-item active px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Scanner Console
+            </a>
+            <a href="{{ url_for('threat_analytics') }}" class="nav-item text-gray-400 px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Threat Analytics
+            </a>
+            
+            <a href="{{ url_for('settings') }}" class="nav-item text-gray-400 px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="p-6 border-t border-gray-800">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-gray-800 overflow-hidden border-2 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+                    <img src="{{ url_for('static', filename='images/avatar_1772885717102.png') }}" alt="Operator Avatar" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-white">{{ username }}</p>
+                    <p class="text-xs text-emerald-400">Operator Active</p>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="w-full flex items-center justify-center py-2 px-4 border border-red-900/50 rounded-md text-sm font-medium text-red-500 hover:bg-red-900/20 hover:text-red-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Log out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col h-full overflow-hidden bg-gray-950 relative">
+        <!-- Abstract Background -->
+        <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-gray-950/50 to-gray-950"></div>
+
+        <!-- Topbar -->
+        <header class="h-16 flex items-center justify-between px-6 lg:px-10 z-10 glass-panel border-b-0 border-t-0 border-r-0 border-l-0 border-b border-gray-800 backdrop-blur-md bg-gray-900/60">
+            <div class="flex items-center text-sm text-gray-400">
+                <span>Dashboard</span>
+                <svg class="h-4 w-4 mx-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span class="text-indigo-400 font-medium tracking-wide">Scanner Console</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="bg-indigo-900/30 text-indigo-300 text-xs px-3 py-1 rounded-full border border-indigo-500/30 flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2 animate-pulse"></span>
+                    Agents Online
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Dashboard Content -->
+        <div class="flex-grow overflow-y-auto p-6 lg:p-10 z-10">
+            
+            <!-- Profile & Stats Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                
+                <!-- Student/User Profile Card (Mimicking User Request) -->
+                <div class="glass-panel rounded-xl border border-gray-800/60 shadow-lg overflow-hidden flex flex-col items-center p-6 lg:col-span-1 backdrop-blur-xl bg-gray-900/40 relative">
+                    <div class="absolute inset-0 bg-gradient-to-b from-indigo-900/20 to-transparent pointer-events-none"></div>
+                    
+                    <div class="w-32 h-32 rounded-full border-4 border border-indigo-500/50 p-1 mb-4 relative z-10 bg-gray-900/80 shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+                        <img src="{{ url_for('static', filename='images/avatar_1772885717102.png') }}" class="w-full h-full rounded-full object-cover">
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-white uppercase tracking-wider mb-2 relative z-10">{{ username }}</h3>
+                    <div class="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded mb-5 border border-emerald-500/30 relative z-10">
+                        Active
+                    </div>
+                    
+                    <div class="w-full space-y-3 relative z-10 text-center">
+                        <div class="border-b border-gray-800/80 pb-4">
+                            <p class="text-sm font-semibold text-gray-300 mb-3">My Scanning Activity</p>
+                            <div class="flex justify-center items-center space-x-6">
+                                <div class="text-center">
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wide">Total Scans</p>
+                                    <p class="text-2xl font-bold text-white">{{ user_total }}</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wide">Threats Found</p>
+                                    <p class="text-2xl font-bold text-red-400">{{ user_phishing }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-b border-gray-800/80 pb-3 pt-2">
+                            <div class="flex justify-center space-x-3">
+                                <div class="bg-blue-900/20 px-3 py-1.5 rounded border border-blue-500/20 flex flex-col items-center min-w-[80px]">
+                                    <span class="text-[10px] text-blue-400 uppercase">URLs</span>
+                                    <span class="text-lg font-bold text-white">{{ user_url }}</span>
+                                </div>
+                                <div class="bg-purple-900/20 px-3 py-1.5 rounded border border-purple-500/20 flex flex-col items-center min-w-[80px]">
+                                    <span class="text-[10px] text-purple-400 uppercase">SMS</span>
+                                    <span class="text-lg font-bold text-white">{{ user_sms }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <p class="text-[11px] text-gray-500 tracking-wide uppercase">System Access: <span class="text-indigo-400 font-bold ml-1">{{ session.get('role', 'user')|title }} Level</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threat Statistics Grid -->
+                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    
+                    <!-- Stat Card 1 -->
+                    <div class="glass-panel p-5 rounded-xl border border-gray-800/60 shadow-lg relative overflow-hidden flex flex-col justify-between hover:border-indigo-500/30 transition-colors group">
+                        <div class="absolute -right-4 -bottom-4 opacity-10 w-24 h-24 pointer-events-none group-hover:scale-110 transition-transform">
+                            <svg class="w-full h-full text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 relative z-10">Total Scans</p>
+                        <p class="text-3xl font-extrabold text-white relative z-10">{{ history_len }}</p>
+                        <p class="text-[10px] text-indigo-400 mt-2 relative z-10">All lifetime inputs evaluated</p>
+                    </div>
+
+                    <!-- Stat Card 2 -->
+                    <div class="glass-panel p-5 rounded-xl border border-gray-800/60 shadow-lg relative overflow-hidden flex flex-col justify-between hover:border-blue-500/30 transition-colors group">
+                         <div class="absolute -right-4 -bottom-4 opacity-10 w-24 h-24 pointer-events-none group-hover:scale-110 transition-transform">
+                            <svg class="w-full h-full text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                        </div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 relative z-10">URL Vectors</p>
+                        <p class="text-3xl font-extrabold text-blue-400 relative z-10">{{ url_scans }}</p>
+                        <p class="text-[10px] text-blue-400/70 mt-2 relative z-10">Total web links processed</p>
+                    </div>
+
+                    <!-- Stat Card 3 -->
+                    <div class="glass-panel p-5 rounded-xl border border-gray-800/60 shadow-lg relative overflow-hidden flex flex-col justify-between hover:border-purple-500/30 transition-colors group">
+                         <div class="absolute -right-4 -bottom-4 opacity-10 w-24 h-24 pointer-events-none group-hover:scale-110 transition-transform">
+                            <svg class="w-full h-full text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        </div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 relative z-10">SMS Vectors</p>
+                        <p class="text-3xl font-extrabold text-purple-400 relative z-10">{{ sms_scans }}</p>
+                        <p class="text-[10px] text-purple-400/70 mt-2 relative z-10">Total text msgs processed</p>
+                    </div>
+
+                    <!-- Stat Card 4 (Safe) -->
+                    <div class="glass-panel p-5 rounded-xl border border-gray-800/60 shadow-lg relative overflow-hidden flex flex-col justify-between hover:border-emerald-500/30 transition-colors group">
+                        <div class="absolute -right-4 -bottom-4 opacity-10 w-24 h-24 pointer-events-none group-hover:scale-110 transition-transform">
+                            <svg class="w-full h-full text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 relative z-10">Safe Scans</p>
+                        <p class="text-3xl font-extrabold text-emerald-400 relative z-10">{{ safe_scans }}</p>
+                        <p class="text-[10px] text-emerald-400/70 mt-2 relative z-10">Benign payloads identified</p>
+                    </div>
+
+                    <!-- Stat Card 5 (Phishing) -->
+                    <div class="glass-panel p-5 rounded-xl border border-gray-800/60 shadow-lg relative overflow-hidden flex flex-col justify-between hover:border-red-500/30 transition-colors group">
+                         <div class="absolute -right-4 -bottom-4 opacity-10 w-24 h-24 pointer-events-none group-hover:scale-110 transition-transform">
+                            <svg class="w-full h-full text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 relative z-10">Phishing URLs</p>
+                        <p class="text-3xl font-extrabold text-red-400 relative z-10">{{ high_risk_urls }}</p>
+                        <p class="text-[10px] text-red-400/70 mt-2 relative z-10">Malicious web links blocked</p>
+                    </div>
+
+                    <!-- Stat Card 6 (Smishing) -->
+                    <div class="glass-panel p-5 rounded-xl border border-gray-800/60 shadow-lg relative overflow-hidden flex flex-col justify-between hover:border-orange-500/30 transition-colors group">
+                         <div class="absolute -right-4 -bottom-4 opacity-10 w-24 h-24 pointer-events-none group-hover:scale-110 transition-transform">
+                             <svg class="w-full h-full text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 relative z-10">Smishing SMS</p>
+                        <p class="text-3xl font-extrabold text-orange-400 relative z-10">{{ high_risk_sms }}</p>
+                        <p class="text-[10px] text-orange-400/70 mt-2 relative z-10">Malicious texts neutralized</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Analysis Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Input Panel -->
+                <section class="glass-panel rounded-2xl border border-gray-800/80 shadow-2xl flex flex-col overflow-hidden h-full min-h-[500px]">
+                    <div class="p-6 border-b border-gray-800/60 bg-gray-900/40">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                            Detection Target Input
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6 flex-grow flex flex-col">
+                        <form id="analyze-form" class="space-y-6 flex flex-col flex-grow">
+                            <div>
+                                <label for="input-type" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Vector Classification</label>
+                                <div class="relative">
+                                    <select id="input-type" class="input-glow block w-full pl-4 pr-10 py-3 text-sm border-gray-700 bg-gray-900 text-white rounded-lg outline-none appearance-none transition-all shadow-inner">
+                                        <option value="URL">Web URL String (Phishing)</option>
+                                        <option value="SMS">SMS / Text Payload (Smishing)</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-grow flex flex-col">
+                                <label for="input-text" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Untrusted Payload</label>
+                                <textarea id="input-text" placeholder="Paste the suspicious content here for AI extraction..." required class="input-glow block w-full border border-gray-700 bg-gray-900 text-gray-200 rounded-lg shadow-inner sm:text-sm p-4 resize-none flex-grow outline-none transition-all font-mono leading-relaxed"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-lg shadow-[0_0_15px_rgba(99,102,241,0.2)] text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 outline-none transition-all hover:scale-[1.01] relative overflow-hidden group">
+                                <span class="absolute w-0 h-0 transition-all duration-500 ease-out bg-white rounded-full group-hover:w-full group-hover:h-56 opacity-10"></span>
+                                <span class="relative flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Execute Multi-Agent Engin
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Results Panel -->
+                <section class="glass-panel rounded-2xl border border-gray-800/80 shadow-2xl flex flex-col overflow-hidden h-full min-h-[500px] relative">
+                    <div class="p-6 border-b border-gray-800/60 bg-gray-900/40 relative z-10">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            Agent Output Log
+                        </h2>
+                    </div>
+
+                    <!-- Default Empty State -->
+                    <div id="default-state" class="flex-grow flex flex-col items-center justify-center text-center p-8 relative z-10">
+                        <div class="w-24 h-24 mb-6 rounded-full bg-gray-800/50 flex items-center justify-center border border-gray-700/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <p class="text-lg text-gray-300 font-medium tracking-wide">Awaiting Telemetry</p>
+                        <p class="text-sm text-gray-500 mt-2 max-w-xs">System is on standby. Inject a payload to initiate the decision-making process.</p>
+                    </div>
+
+                    <!-- Loading State Pipeline -->
+                    <div id="loading-state" class="hidden flex-grow flex-col items-center justify-center bg-gray-900/40 relative z-10 px-8 py-10">
+                        <h3 class="font-bold text-indigo-400 tracking-widest mb-8 text-center uppercase text-sm">Live Analysis Pipeline</h3>
+                        
+                        <div class="w-full max-w-2xl relative">
+                            <!-- Horizontal Line Connecting Nodes -->
+                            <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-800 -translate-y-1/2 z-0"></div>
+                            <!-- Active Line Fill -->
+                            <div id="pipeline-progress" class="absolute top-1/2 left-0 w-0 h-1 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)] -translate-y-1/2 z-0 transition-all duration-[800ms] ease-out"></div>
+                            
+                            <div class="relative z-10 flex justify-between">
+                                <!-- Step 1: Input -->
+                                <div class="flex flex-col items-center step-node" id="step-1">
+                                    <div class="w-8 h-8 rounded-full bg-indigo-900 border-2 border-indigo-500 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.6)] animate-pulse transition-all duration-300">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                    </div>
+                                    <span class="text-[10px] uppercase text-indigo-300 font-bold mt-3 text-center w-20">Input Captured</span>
+                                </div>
+
+                                <!-- Step 2: Extraction -->
+                                <div class="flex flex-col items-center step-node opacity-30 grayscale" id="step-2">
+                                    <div class="w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center transition-all duration-300">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                    </div>
+                                    <span class="text-[10px] uppercase text-gray-500 font-bold mt-3 text-center w-20">Feature Extraction</span>
+                                </div>
+
+                                <!-- Step 3: ML Model -->
+                                <div class="flex flex-col items-center step-node opacity-30 grayscale" id="step-3">
+                                    <div class="w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center transition-all duration-300">
+                                        <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" /></svg>
+                                    </div>
+                                    <span class="text-[10px] uppercase text-gray-500 font-bold mt-3 text-center w-20">AI Prediction</span>
+                                </div>
+
+                                <!-- Step 4: Threat Intel -->
+                                <div class="flex flex-col items-center step-node opacity-30 grayscale" id="step-4">
+                                    <div class="w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center transition-all duration-300">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </div>
+                                    <span class="text-[10px] uppercase text-gray-500 font-bold mt-3 text-center w-20">Intel Lookup</span>
+                                </div>
+                                
+                                <!-- Step 5: Result -->
+                                <div class="flex flex-col items-center step-node opacity-30 grayscale" id="step-5">
+                                    <div class="w-8 h-8 rounded-full bg-gray-800 border-2 border-gray-600 flex items-center justify-center transition-all duration-300">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </div>
+                                    <span class="text-[10px] uppercase text-gray-500 font-bold mt-3 text-center w-20">Final Verdict</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-gray-500 mt-16 font-mono text-center bg-gray-950/80 px-4 py-2 rounded border border-gray-800" id="loading-text">Initializing Agent Pipeline...</div>
+                    </div>
+
+                    <!-- Active Result State -->
+                    <div id="result-state" class="hidden flex-grow flex flex-col p-6 space-y-6 relative z-10 w-full overflow-y-auto">
+                        
+                        <!-- Main Verdict Banner -->
+                        <div id="verdict-banner" class="w-full rounded-xl p-6 text-center border bg-gray-900/80 backdrop-blur-sm transition-all duration-500 transform relative overflow-hidden flex flex-col items-center justify-center">
+                            <!-- Background glow effect controlled via JS classes -->
+                            <div class="absolute inset-0 opacity-20" id="verdict-bg-glow"></div>
+                            
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 relative z-10">Classification</h3>
+                            <p id="res-verdict" class="text-3xl font-extrabold tracking-tight relative z-10 text-white">---</p>
+                            
+                            <div class="mt-4 flex space-x-4 relative z-10">
+                                <div class="px-3 py-1 bg-gray-950/50 rounded flex items-center border border-gray-700">
+                                    <span class="text-xs text-gray-500 uppercase mr-2">Type</span>
+                                    <span id="res-type" class="text-sm font-semibold text-gray-300">---</span>
+                                </div>
+                                <div class="px-3 py-1 bg-gray-950/50 rounded flex items-center border border-gray-700">
+                                    <span class="text-xs text-gray-500 uppercase mr-2">Risk</span>
+                                    <span id="res-risk" class="text-sm font-bold">---</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk & Safety Metrics -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Safety Score Gauge -->
+                            <div class="bg-gray-900/60 rounded-xl p-4 border border-gray-800 flex flex-col items-center justify-center">
+                                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 text-center flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    Risk Score
+                                </p>
+                                <div class="relative w-24 h-24 flex items-center justify-center rounded-full border-4 border-gray-800 transition-all duration-700" id="safety-score-circle">
+                                    <span id="res-risk-score" class="text-2xl font-extrabold text-white">--</span>
+                                </div>
+                            </div>
+                            <!-- Confidence Meter -->
+                            <div class="bg-gray-900/60 rounded-xl p-4 border border-gray-800 flex flex-col justify-center">
+                                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider text-center w-full mb-2 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                    ML Confidence
+                                </p>
+                                <div class="text-center mb-2">
+                                    <p id="res-conf-text" class="text-xl font-bold font-mono text-white">0%</p>
+                                </div>
+                                <div class="w-full bg-gray-950 rounded-full h-2 border border-gray-800 overflow-hidden relative mt-auto mb-2">
+                                    <div class="absolute inset-0 bg-gray-800 opacity-20" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);"></div>
+                                    <div id="res-conf-bar" class="h-2 rounded-full transition-all duration-1000 ease-out relative shadow-[0_0_10px_currentColor]" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Domain Intelligence (Hidden by default, shown for URLs) -->
+                        <div id="domain-intel-panel" class="hidden bg-gray-900/60 rounded-xl p-5 border border-gray-800">
+                            <p class="text-sm text-gray-300 font-semibold mb-3 flex items-center tracking-wide">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                </svg>
+                                Domain Intelligence
+                            </p>
+                            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                                <div class="bg-gray-950/50 p-2 rounded border border-gray-800 relative overflow-hidden group">
+                                    <div class="absolute right-0 top-0 h-full w-1 bg-blue-500/20 group-hover:bg-blue-500/50 transition-colors"></div>
+                                    <span class="text-gray-500 block mb-1">Domain Age</span>
+                                    <span id="intel-age" class="text-gray-200 font-medium tracking-wide">--</span>
+                                </div>
+                                <div class="bg-gray-950/50 p-2 rounded border border-gray-800 relative overflow-hidden group">
+                                    <div class="absolute right-0 top-0 h-full w-1 bg-emerald-500/20 group-hover:bg-emerald-500/50 transition-colors"></div>
+                                    <span class="text-gray-500 block mb-1">SSL Certificate</span>
+                                    <span id="intel-ssl" class="text-gray-200 font-medium tracking-wide">--</span>
+                                </div>
+                                <div class="bg-gray-950/50 p-2 rounded border border-gray-800 relative overflow-hidden group">
+                                    <div class="absolute right-0 top-0 h-full w-1 bg-purple-500/20 group-hover:bg-purple-500/50 transition-colors"></div>
+                                    <span class="text-gray-500 block mb-1">IP Location</span>
+                                    <span id="intel-ip" class="text-gray-200 font-medium tracking-wide">--</span>
+                                </div>
+                                <div class="bg-gray-950/50 p-2 rounded border border-gray-800 relative overflow-hidden group">
+                                    <div class="absolute right-0 top-0 h-full w-1 bg-yellow-500/20 group-hover:bg-yellow-500/50 transition-colors"></div>
+                                    <span class="text-gray-500 block mb-1">WHOIS Status</span>
+                                    <span id="intel-whois" class="text-gray-200 font-medium tracking-wide">--</span>
+                                </div>
+                                <div class="bg-gray-950/50 p-2 rounded border border-gray-800 relative overflow-hidden group lg:col-span-1 col-span-2">
+                                    <div class="absolute right-0 top-0 h-full w-1 bg-red-500/20 group-hover:bg-red-500/50 transition-colors"></div>
+                                    <span class="text-gray-500 block mb-1">Blacklist Status</span>
+                                    <span id="intel-blacklist" class="text-gray-200 font-medium tracking-wide">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Explanation Panel -->
+                        <div class="bg-gray-900/60 rounded-xl p-5 border border-indigo-900/30 shadow-[0_0_15px_rgba(79,70,229,0.1)] flex-grow">
+                            <p class="text-sm text-indigo-300 font-bold mb-3 flex items-center tracking-wide uppercase">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                AI Explanation & Details
+                            </p>
+                            <ul id="res-indicators" class="space-y-2 text-sm text-gray-400 pl-2">
+                                <!-- Injected dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Advanced Cybersecurity Visualizations -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+                <!-- Global Cyber Attack Map -->
+                <div class="lg:col-span-2 glass-panel rounded-2xl border border-gray-800/80 shadow-lg p-6 relative overflow-hidden flex flex-col min-h-[400px]">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-4 flex items-center z-10 w-full bg-gray-900/40 p-2 rounded -mt-2 -mx-2 mb-4">
+                        <svg class="h-4 w-4 mr-2 ml-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Global Threat Origin Map (Live)
+                    </h2>
+                    <div id="dash-threat-map" class="flex-grow w-full rounded border border-gray-800 z-10" style="min-height: 400px; background-color: #030712;"></div>
+                </div>
+
+                <!-- Threat Analytics Graphs -->
+                <div class="glass-panel rounded-2xl border border-gray-800/80 shadow-lg p-6 flex flex-col space-y-4 min-h-[400px]">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-2 flex items-center w-full bg-gray-900/40 p-2 rounded -mt-2 -mx-2 mb-6">
+                        <svg class="h-4 w-4 mr-2 ml-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        Telemetry Analytics
+                    </h2>
+                    
+                    <div class="w-full h-32 relative flex justify-center border-b border-gray-800/50 pb-4">
+                        <canvas id="dashRiskChart"></canvas>
+                    </div>
+                    <div class="w-full h-32 relative border-b border-gray-800/50 pb-4">
+                        <canvas id="dashTypeChart"></canvas>
+                    </div>
+                    <div class="w-full h-32 relative">
+                        <canvas id="dashTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scan History & Agent Status Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 pb-8">
+                <!-- User Scan History table -->
+                <div class="lg:col-span-2 glass-panel rounded-2xl border border-gray-800/80 shadow-lg p-6 overflow-hidden">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Operator Scan History
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs uppercase text-gray-500 bg-gray-900/50">
+                                    <th class="py-3 px-3 rounded-l-md w-1/4">Timestamp</th>
+                                    <th class="py-3 px-3 w-1/2">Payload / URL</th>
+                                    <th class="py-3 px-3 rounded-r-md w-1/4">Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm text-gray-300 divide-y divide-gray-800/60">
+                                {% for scan in recent_history %}
+                                <tr class="hover:bg-gray-900/30 transition-colors group">
+                                    <td class="py-3 px-3 text-xs text-gray-500">{{ scan.timestamp }}</td>
+                                    <td class="py-3 px-3">
+                                        <div class="font-mono text-xs max-w-xs truncate text-gray-400 group-hover:text-gray-300 transition-colors" title="{{ scan.input_text }}">{{ scan.input_text }}</div>
+                                        <div class="text-[10px] uppercase text-indigo-500 font-semibold tracking-wider mt-1">{{ scan.input_type }} Scan</div>
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        {% if scan.risk_level in ['High', 'Invalid'] %}
+                                            <span class="px-2 py-1 bg-red-900/30 text-red-500 text-[10px] uppercase font-bold tracking-wider rounded border border-red-500/20">Critical</span>
+                                        {% elif scan.risk_level == 'Medium' %}
+                                            <span class="px-2 py-1 bg-yellow-900/30 text-yellow-500 text-[10px] uppercase font-bold tracking-wider rounded border border-yellow-500/20">Suspicious</span>
+                                        {% else %}
+                                            <span class="px-2 py-1 bg-emerald-900/30 text-emerald-500 text-[10px] uppercase font-bold tracking-wider rounded border border-emerald-500/20">Safe</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-6 text-gray-600 text-sm italic">No recent scans logged in this session.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AI Agent Status -->
+                <div class="glass-panel rounded-2xl border border-gray-800/80 shadow-lg p-6">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-5 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        Multi-Agent Engine
+                    </h2>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3.5 rounded-lg bg-gray-900/50 border border-t-0 border-l-0 border-r-0 border-b-gray-800/50">
+                            <div class="flex items-center">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-3 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></span>
+                                <span class="text-sm text-gray-300 font-medium">URL Detection Agent</span>
+                            </div>
+                            <span class="text-[10px] text-emerald-400 font-bold bg-emerald-900/30 border border-emerald-500/30 px-2 py-1 rounded tracking-widest shadow-inner">ONLINE</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3.5 rounded-lg bg-gray-900/50 border border-t-0 border-l-0 border-r-0 border-b-gray-800/50">
+                            <div class="flex items-center">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-3 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" style="animation-delay: 0.2s"></span>
+                                <span class="text-sm text-gray-300 font-medium">SMS NLP Agent</span>
+                            </div>
+                            <span class="text-[10px] text-emerald-400 font-bold bg-emerald-900/30 border border-emerald-500/30 px-2 py-1 rounded tracking-widest shadow-inner">ONLINE</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3.5 rounded-lg bg-gray-900/50">
+                            <div class="flex items-center">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-3 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" style="animation-delay: 0.4s"></span>
+                                <span class="text-sm text-gray-300 font-medium">Threat Intel Agent</span>
+                            </div>
+                            <span class="text-[10px] text-emerald-400 font-bold bg-emerald-900/30 border border-emerald-500/30 px-2 py-1 rounded tracking-widest shadow-inner">ONLINE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+
+
+    <!-- Logic Script -->
+    <script>
+        // Store visual charts
+        let dashRiskChartInst, dashTypeChartInst, dashTimeChartInst;
+        let threatMap;
+
+        // Initialize Map
+        function initMap() {
+            threatMap = L.map('dash-threat-map', {zoomControl: false}).setView([20, 0], 2);
+            // Dark Matter maps for cybersecurity look
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(threatMap);
+        }
+
+        // Initialize Charts
+        function initCharts() {
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto';
+            
+            // Risk Pie
+            const ctxRisk = document.getElementById('dashRiskChart').getContext('2d');
+            dashRiskChartInst = new Chart(ctxRisk, {
+                type: 'pie',
+                data: { labels: ['Critical', 'Suspicious', 'Safe'], datasets: [{ data: [0,0,0], backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderColor: '#030712' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: {boxWidth: 8, font: {size: 10}} } } }
+            });
+
+            // Type Bar
+            const ctxType = document.getElementById('dashTypeChart').getContext('2d');
+            dashTypeChartInst = new Chart(ctxType, {
+                type: 'bar',
+                data: { labels: ['URLs Processed', 'SMS Processed'], datasets: [{ data: [0,0], backgroundColor: ['#3b82f6', '#8b5cf6'], borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display:false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+            });
+
+            // Time Line
+            const ctxTime = document.getElementById('dashTimeChart').getContext('2d');
+            dashTimeChartInst = new Chart(ctxTime, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Scan Volume', data: [], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.2)', borderWidth: 2, fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display:false } }, scales: { y: { display: false }, x: { display: false } } }
+            });
+        }
+
+        // Fetch Analytics Data
+        function fetchAnalytics() {
+            fetch('/api/telemetry')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) return;
+                    // Risk
+                    if(dashRiskChartInst) {
+                        dashRiskChartInst.data.datasets[0].data = [data.risk_distribution['High']||0, data.risk_distribution['Medium']||0, data.risk_distribution['Low/Safe']||0];
+                        dashRiskChartInst.update();
+                    }
+                    // Type
+                    if(dashTypeChartInst) {
+                        dashTypeChartInst.data.datasets[0].data = [data.type_distribution['URL']||0, data.type_distribution['SMS']||0];
+                        dashTypeChartInst.update();
+                    }
+                    // Time
+                    if(dashTimeChartInst) {
+                        dashTimeChartInst.data.labels = data.dates || [];
+                        dashTimeChartInst.data.datasets[0].data = data.scans_over_time || [];
+                        dashTimeChartInst.update();
+                    }
+                }).catch(e => console.error(e));
+        }
+
+        // Fetch Map Data
+        function fetchMapData() {
+            fetch('/api/threat_map')
+                .then(r => r.json())
+                .then(data => {
+                    if(data.error || !threatMap) return;
+                    
+                    data.data.forEach(pt => {
+                        let color = '#10b981'; // safe
+                        if(pt.risk === 'High' || pt.risk === 'Invalid') color = '#ef4444';
+                        else if(pt.risk === 'Medium') color = '#f59e0b';
+                        
+                        L.circleMarker([pt.lat, pt.lng], {
+                            radius: 6,
+                            fillColor: color,
+                            color: color,
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.6
+                        }).addTo(threatMap).bindPopup(`<b>Risk: ${pt.risk}</b><br>Type: ${pt.type}`);
+                    });
+                }).catch(e => console.error(e));
+        }
+
+        document.getElementById('analyze-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const text = document.getElementById('input-text').value;
+            const type = document.getElementById('input-type').value;
+            
+            // Manage UI States
+            document.getElementById('default-state').classList.add('hidden');
+            document.getElementById('result-state').classList.add('hidden');
+            document.getElementById('result-state').classList.remove('flex');
+            
+            const loadingState = document.getElementById('loading-state');
+            loadingState.classList.remove('hidden');
+            loadingState.classList.add('flex');
+            
+            // Reset Pipeline Visuals
+            const pBar = document.getElementById('pipeline-progress');
+            pBar.style.width = '0%';
+            for(let i=2; i<=5; i++) {
+                const s = document.getElementById(`step-${i}`);
+                s.classList.add('opacity-30', 'grayscale');
+                s.querySelector('div').classList.remove('bg-indigo-900', 'border-indigo-500', 'shadow-[0_0_15px_rgba(99,102,241,0.6)]', 'animate-pulse');
+                s.querySelector('div').classList.add('bg-gray-800', 'border-gray-600');
+                s.querySelector('svg').classList.remove('text-white');
+                s.querySelector('svg').classList.add('text-gray-400');
+                s.querySelector('span').classList.remove('text-indigo-300');
+                s.querySelector('span').classList.add('text-gray-500');
+            }
+            
+            // Sequence Animation logic
+            const stages = [
+                { width: '25%', step: 2, text: "Extracting lexical features..." },
+                { width: '50%', step: 3, text: "Querying ML models via internal agent..." },
+                { width: '75%', step: 4, text: "Performing exterior Threat Intelligence lookup..." },
+                { width: '100%', step: 5, text: "Compiling decision matrix..." }
+            ];
+            
+            let stageIdx = 0;
+            const loadingText = document.getElementById('loading-text');
+            loadingText.innerText = "Input sequence digested. Initializing framework...";
+            
+            const pipelineInterval = setInterval(() => {
+                if(stageIdx >= stages.length) return;
+                const d = stages[stageIdx];
+                pBar.style.width = d.width;
+                
+                const s = document.getElementById(`step-${d.step}`);
+                s.classList.remove('opacity-30', 'grayscale');
+                s.querySelector('div').classList.remove('bg-gray-800', 'border-gray-600');
+                s.querySelector('div').classList.add('bg-indigo-900', 'border-indigo-500', 'shadow-[0_0_15px_rgba(99,102,241,0.6)]', 'animate-pulse');
+                s.querySelector('svg').classList.remove('text-gray-400');
+                s.querySelector('svg').classList.add('text-white');
+                s.querySelector('span').classList.remove('text-gray-500');
+                s.querySelector('span').classList.add('text-indigo-300');
+                
+                loadingText.innerText = d.text;
+                stageIdx++;
+            }, 600); // Progress pipeline every 600ms
+
+            fetch('/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, type: type })
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(pipelineInterval);
+                pBar.style.width = '100%';
+                
+                // Hide Loading
+                loadingState.classList.add('hidden');
+                loadingState.classList.remove('flex');
+                
+                if(data.error) {
+                    alert("System Error: " + data.error);
+                    document.getElementById('default-state').classList.remove('hidden');
+                    return;
+                }
+
+                // Show Results
+                const resState = document.getElementById('result-state');
+                resState.classList.remove('hidden');
+                resState.classList.add('flex');
+
+                // Populate Fields
+                document.getElementById('res-type').innerText = data['Input Type'];
+                document.getElementById('res-verdict').innerText = data['Verdict'];
+                
+                const riskElem = document.getElementById('res-risk');
+                const riskLevel = data['Risk Level'];
+                riskElem.innerText = riskLevel;
+                
+                // Styling based on risk
+                const verdictBanner = document.getElementById('verdict-banner');
+                const verdictBgGlow = document.getElementById('verdict-bg-glow');
+                const confBar = document.getElementById('res-conf-bar');
+                
+                // Reset styling classes
+                verdictBanner.className = 'w-full rounded-xl p-6 text-center border bg-gray-900/80 backdrop-blur-sm transition-all duration-500 transform relative overflow-hidden flex flex-col items-center justify-center';
+                
+                // Ensure dynamic text cleanly overwrites
+                document.getElementById('res-verdict').classList.remove('text-white', 'text-emerald-400', 'text-yellow-400', 'text-red-400');
+
+                if (riskLevel === 'PHISHING' || riskLevel === 'Invalid') {
+                    riskElem.className = 'text-sm font-bold text-red-500';
+                    verdictBanner.classList.add('border-red-500/50', 'danger-glow');
+                    document.getElementById('res-verdict').classList.add('text-red-400');
+                    verdictBgGlow.className = 'absolute inset-0 opacity-20 bg-red-600';
+                    confBar.className = 'h-2 rounded-full transition-all duration-1000 ease-out relative shadow-[0_0_10px_rgba(239,68,68,0.8)] bg-red-500';
+                } else if (riskLevel === 'SUSPICIOUS') {
+                    riskElem.className = 'text-sm font-bold text-yellow-500';
+                    verdictBanner.classList.add('border-yellow-500/50', 'suspicious-glow');
+                    document.getElementById('res-verdict').classList.add('text-yellow-400');
+                    verdictBgGlow.className = 'absolute inset-0 opacity-20 bg-yellow-600';
+                    confBar.className = 'h-2 rounded-full transition-all duration-1000 ease-out relative shadow-[0_0_10px_rgba(234,179,8,0.8)] bg-yellow-500';
+                } else {
+                    riskElem.className = 'text-sm font-bold text-emerald-500';
+                    verdictBanner.classList.add('border-emerald-500/50', 'safe-glow');
+                    document.getElementById('res-verdict').classList.add('text-emerald-400');
+                    verdictBgGlow.className = 'absolute inset-0 opacity-20 bg-emerald-600';
+                    confBar.className = 'h-2 rounded-full transition-all duration-1000 ease-out relative shadow-[0_0_10px_rgba(16,185,129,0.8)] bg-emerald-500';
+                }
+
+                // Domain Intel Population (only show if URL)
+                const intelPanel = document.getElementById('domain-intel-panel');
+                if (data['Input Type'] === 'URL' && data['Domain Intelligence']) {
+                    intelPanel.classList.remove('hidden');
+                    document.getElementById('intel-age').innerText = data['Domain Intelligence']['Domain Age'];
+                    document.getElementById('intel-ssl').innerText = data['Domain Intelligence']['SSL Certificate'];
+                    document.getElementById('intel-ip').innerText = data['Domain Intelligence']['IP Location'];
+                    document.getElementById('intel-whois').innerText = data['Domain Intelligence']['WHOIS Status'];
+                    document.getElementById('intel-blacklist').innerText = data['Domain Intelligence']['Blacklist Status'] || '--';
+                    
+                    if (data['Domain Intelligence']['Blacklist Status'] && data['Domain Intelligence']['Blacklist Status'].includes('Clean')) {
+                        document.getElementById('intel-blacklist').className = 'text-emerald-400 font-bold tracking-wide';
+                    } else if (data['Domain Intelligence']['Blacklist Status']) {
+                        document.getElementById('intel-blacklist').className = 'text-red-500 font-bold tracking-wide drop-shadow-[0_0_5px_rgba(239,68,68,0.8)] animate-pulse';
+                    }
+                } else {
+                    intelPanel.classList.add('hidden');
+                }
+
+                // Risk Score Visualization
+                const riskLevelStr = data['Risk Level'];
+                const rawScore = parseInt(data['Safety Score'] || 0); // Backend still identifies field as Safety Score for parsing compatibility upstream
+                
+                // Fallback calculations if backend doesn't provide Safety Score
+                let riskScoreNum = rawScore;
+                if (!data['Safety Score']) {
+                    riskScoreNum = (riskLevelStr === 'PHISHING' || riskLevelStr === 'Invalid') ? 85 : (riskLevelStr === 'SUSPICIOUS' ? 45 : 10);
+                }
+                
+                document.getElementById('res-risk-score').innerText = riskScoreNum;
+                
+                const scoreCircle = document.getElementById('safety-score-circle');
+                const scoreText = document.getElementById('res-risk-score');
+                // The styling represents exact danger matching the requested bounds
+                // 0-30 is Safe (Green)
+                // 31-60 is Suspicious (Yellow)
+                // 61-100 is Phishing (Red)
+                
+                if (riskScoreNum <= 30) {
+                    scoreCircle.className = 'relative w-24 h-24 flex items-center justify-center rounded-full border-[6px] shadow-[0_0_20px_rgba(16,185,129,0.2)] border-emerald-500 transition-all duration-700 bg-gray-900/50 hover:scale-105';
+                    scoreText.className = 'text-3xl font-extrabold text-emerald-400';
+                } else if (riskScoreNum <= 60) {
+                    scoreCircle.className = 'relative w-24 h-24 flex items-center justify-center rounded-full border-[6px] shadow-[0_0_20px_rgba(234,179,8,0.2)] border-yellow-500 transition-all duration-700 bg-gray-900/50 hover:scale-105';
+                    scoreText.className = 'text-3xl font-extrabold text-yellow-500';
+                } else {
+                    scoreCircle.className = 'relative w-24 h-24 flex items-center justify-center rounded-full border-[6px] shadow-[0_0_20px_rgba(239,68,68,0.2)] border-red-500 transition-all duration-700 bg-gray-900/50 hover:scale-105';
+                    scoreText.className = 'text-3xl font-extrabold text-red-500';
+                }
+
+                // Confidence Bar Animation
+                document.getElementById('res-conf-text').innerText = data['Confidence Score'];
+                confBar.style.width = '0%'; // reset
+                setTimeout(() => {
+                    confBar.style.width = data['Confidence Score'];
+                }, 50);
+
+                // Populate Indicators
+                const indicatorsList = document.getElementById('res-indicators');
+                indicatorsList.innerHTML = ''; // Clear prev
+                
+                data['Indicators'].forEach((item, index) => {
+                    const li = document.createElement('li');
+                    li.className = "flex items-start py-1 border-b border-gray-800/50 last:border-0 opacity-0 transform translate-y-2 transition-all duration-500";
+                    li.style.transitionDelay = `${index * 150}ms`;
+                    
+                    const isDanger = (riskLevel === 'PHISHING' || riskLevel === 'Invalid');
+                    const isSuspicious = (riskLevel === 'SUSPICIOUS');
+                    
+                    const icon = document.createElement('span');
+                    if(isDanger) {
+                        icon.className = "text-red-500 mr-2 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]";
+                        icon.innerHTML = "⚠️";
+                    } else if(isSuspicious) {
+                        icon.className = "text-yellow-500 mr-2 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]";
+                        icon.innerHTML = "⚠️";
+                    } else {
+                        icon.className = "text-emerald-500 mr-2 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]";
+                        icon.innerHTML = "✓";
+                    }
+                    
+                    const textSpan = document.createElement('span');
+                    if(isDanger) textSpan.className = "text-red-200/90 font-medium";
+                    else if(isSuspicious) textSpan.className = "text-yellow-200/90 font-medium";
+                    else textSpan.className = "text-emerald-200/90 font-medium";
+                    textSpan.innerText = item;
+                    
+                    li.appendChild(icon);
+                    li.appendChild(textSpan);
+                    indicatorsList.appendChild(li);
+                    
+                    // Trigger fade in animation
+                    setTimeout(() => {
+                        li.classList.remove('opacity-0', 'translate-y-2');
+                    }, 50);
+                });
+                
+                // Refresh Analytics
+                fetchAnalytics();
+                fetchMapData();
+            })
+            .catch(error => {
+                clearInterval(pipelineInterval);
+                loadingState.classList.add('hidden');
+                document.getElementById('default-state').classList.remove('hidden');
+                alert('Connection to Multi-Agent API failed.');
+                console.error('Error:', error);
+            });
+        });
+
+        // Initialize Map and Charts on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            initCharts();
+            fetchAnalytics();
+            fetchMapData();
+        });
+    </script>
+</body>
+</html>

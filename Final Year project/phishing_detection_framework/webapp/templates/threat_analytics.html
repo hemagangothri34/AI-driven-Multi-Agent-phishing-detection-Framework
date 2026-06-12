@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Analytics - FinTech Shield AI</title>
+    <!-- Tailwind CSS for premium responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom App styles */
+        body {
+            background-color: #030712; /* gray-950 */
+        }
+        
+        .glass-panel {
+            background: rgba(3, 7, 18, 0.75);
+            backdrop-filter: blur(16px) saturate(150%);
+            -webkit-backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .sidebar {
+            background: rgba(3, 7, 18, 0.8);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            border-left: 3px solid #6366f1;
+            color: white;
+        }
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        
+        .hero-bg {
+            background-image: url('{{ url_for("static", filename="images/dashboard_hero_1772885700341.png") }}');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            mix-blend-mode: screen;
+        }
+        
+        /* Gen AI specific glow effects */
+        .ai-glow {
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.2);
+        }
+        
+        /* Node animation for the network visualization */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        .node-pulse {
+            animation: pulse-ring 2s infinite;
+        }
+        
+        /* Typing effect cursor */
+        .cursor-blink::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body class="text-gray-100 h-screen overflow-hidden font-sans selection:bg-indigo-500 selection:text-white flex">
+
+    <!-- Sidebar Navigation (Same as Dashboard) -->
+    <aside class="sidebar w-64 h-full flex flex-col flex-shrink-0 z-20 hidden md:flex relative">
+        <div class="h-16 flex items-center px-6 border-b border-gray-800">
+            <div class="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center mr-3 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            <span class="font-bold text-lg tracking-wide text-white">Shield AI</span>
+        </div>
+
+        <nav class="flex-grow py-6 flex flex-col gap-2">
+            <div class="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Main Menu</div>
+            
+            <a href="{{ url_for('dashboard') }}" class="nav-item text-gray-400 px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Scanner Console
+            </a>
+            <a href="{{ url_for('threat_analytics') }}" class="nav-item active px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Threat Analytics
+            </a>
+            <a href="{{ url_for('scan_history') }}" class="nav-item text-gray-400 px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Scan History
+            </a>
+            
+
+            <a href="{{ url_for('settings') }}" class="nav-item text-gray-400 px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="p-6 border-t border-gray-800">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-gray-800 overflow-hidden border-2 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+                    <img src="{{ url_for('static', filename='images/avatar_1772885717102.png') }}" alt="Operator Avatar" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-white">{{ username }}</p>
+                    <p class="text-xs text-emerald-400">Operator Active</p>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="w-full flex items-center justify-center py-2 px-4 border border-red-900/50 rounded-md text-sm font-medium text-red-500 hover:bg-red-900/20 hover:text-red-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Log out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col h-full overflow-hidden bg-gray-950 relative">
+        <!-- Abstract Background -->
+        <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-gray-950/80 to-gray-950"></div>
+
+        <!-- Topbar -->
+        <header class="h-16 flex items-center justify-between px-6 lg:px-10 z-10 glass-panel border-b-0 border-t-0 border-r-0 border-l-0 border-b border-gray-800 backdrop-blur-md bg-gray-900/60">
+            <div class="flex items-center text-sm text-gray-400">
+                <span>Dashboard</span>
+                <svg class="h-4 w-4 mx-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span class="text-indigo-400 font-medium tracking-wide">Threat Analytics Insights</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="bg-violet-900/30 text-violet-300 text-xs px-3 py-1 rounded-full border border-violet-500/30 flex items-center shadow-[0_0_10px_rgba(139,92,246,0.3)]">
+                    <svg class="w-3 h-3 mr-1.5 animate-pulse" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                    Gen AI Models Syncing
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Dashboard Content -->
+        <div class="flex-grow overflow-y-auto p-6 lg:p-10 z-10">
+            
+            <div class="mb-8 flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">My Threat Analytics</h1>
+                    <p class="text-gray-400 text-sm max-w-2xl">Advanced telemetric data visualization powered by Generative AI heuristics. Multi-agent continuous monitoring protocols are active.</p>
+                </div>
+            </div>
+
+            <!-- Complex Data Row 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Threat Distribution Chart -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800/80 shadow-2xl lg:col-span-2 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-600 rounded-full blur-[100px] opacity-10 pointer-events-none"></div>
+                    <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                        </svg>
+                        Vector Classification Matrix
+                    </h2>
+                    <div class="h-64 w-full">
+                        <canvas id="threatLineChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Generative AI Live Analysis -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800/80 shadow-2xl ai-glow relative overflow-hidden flex flex-col">
+                    <div class="absolute inset-0 border-t-2 border-violet-500 opacity-50 pointer-events-none" style="filter: blur(2px);"></div>
+                    
+                    <h2 class="text-sm font-semibold text-violet-300 uppercase tracking-wider mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                        Gen AI Threat Synthesis
+                    </h2>
+                    
+                    <div class="flex-grow bg-gray-950/80 rounded-xl border border-violet-900/50 p-4 font-mono text-xs text-gray-300 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-violet-500 to-transparent opacity-30"></div>
+                        
+                        <p class="text-violet-400 mb-2">> LLM Agent Initializing...</p>
+                        <p class="text-gray-400 mb-2">> Parsing recent smishing topologies...</p>
+                        <p class="text-emerald-400 mb-2">> Identified new polymorphic URL pattern.</p>
+                        
+                        <div class="mt-4 border-l-2 border-violet-500 pl-3">
+                            <span class="text-white font-semibold">Synthesis Report:</span>
+                            <br>
+                            <span class="cursor-blink text-gray-300 leading-relaxed block mt-1" id="gen-ai-text">
+                                Analyzing your personal telemetry... The Multi-Agent engine has processed your recent requests. The Decision Agent dynamically updates its feature weights to protect your session. Confidence thresholds remain > 92%.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complex Data Row 2 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                
+                <!-- Mock Network Visualization & Stats -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800/80 shadow-2xl relative overflow-hidden">
+                    <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4 flex items-center">
+                        <svg class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                        My Agent Node Telemetry
+                    </h2>
+                    
+                    <!-- Stylized Map/Network Simulation -->
+                    <div class="relative w-full h-48 bg-gray-900/50 rounded-xl border border-gray-800 flex items-center justify-center overflow-hidden mb-6">
+                        <!-- Connecting Lines -->
+                        <svg class="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
+                            <line x1="20%" y1="30%" x2="50%" y2="50%" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4" />
+                            <line x1="80%" y1="20%" x2="50%" y2="50%" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4" />
+                            <line x1="70%" y1="80%" x2="50%" y2="50%" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4" />
+                            <line x1="30%" y1="70%" x2="50%" y2="50%" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4" />
+                        </svg>
+                        
+                        <!-- Center Node -->
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                            <div class="w-12 h-12 bg-indigo-900 border-2 border-indigo-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.6)] node-pulse">
+                                <svg class="w-6 h-6 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                            </div>
+                        </div>
+                        
+                        <!-- Peripheral Nodes -->
+                        <div class="absolute left-[20%] top-[30%] w-4 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>
+                        <div class="absolute left-[80%] top-[20%] w-4 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"></div>
+                        <div class="absolute left-[70%] top-[80%] w-5 h-5 bg-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-bounce"></div>
+                        <div class="absolute left-[30%] top-[70%] w-4 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800">
+                            <p class="text-xs text-gray-500 uppercase">Total Scans</p>
+                            <p class="text-2xl font-bold text-white mt-1">{{ total_scans }}</p>
+                        </div>
+                        <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800">
+                            <p class="text-xs text-gray-500 uppercase">Blocked Threats</p>
+                            <div class="flex items-center mt-1">
+                                <p class="text-2xl font-bold text-red-500 mr-2">{{ phishing_count }}</p>
+                                <svg class="w-4 h-4 text-red-500 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doughnut Chart & Risk Metrics -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800/80 shadow-2xl relative overflow-hidden flex flex-col items-center">
+                    <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4 w-full flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                        </svg>
+                        Phishing Sub-categories
+                    </h2>
+                    
+                    <div class="h-56 w-full flex justify-center relative">
+                        <canvas id="threatDoughnutChart"></canvas>
+                        <!-- Center Label -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                            <span class="text-3xl font-bold text-white">94%</span>
+                            <span class="text-xs text-gray-500">Confidence</span>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full mt-6 grid grid-cols-3 gap-2 text-center border-t border-gray-800 pt-4">
+                        <div>
+                            <p class="text-indigo-400 font-bold">45%</p>
+                            <p class="text-[10px] text-gray-500 uppercase">Credential Theft</p>
+                        </div>
+                        <div class="border-l border-r border-gray-800">
+                            <p class="text-violet-400 font-bold">32%</p>
+                            <p class="text-[10px] text-gray-500 uppercase">Financial Fraud</p>
+                        </div>
+                        <div>
+                            <p class="text-fuchsia-400 font-bold">23%</p>
+                            <p class="text-[10px] text-gray-500 uppercase">Malware DL</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
+    </main>
+
+
+
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Typing effect for the Gen AI terminal
+            const texts = [
+                "Calculating optimal threshold adjustments...",
+                "Synthesizing zero-day domain entropy signatures...",
+                "Deploying federated model weights to edge nodes...",
+                "Evaluating SMS urgency classifiers...",
+                "Matrix isolation complete. Awaiting new telemetry."
+            ];
+            let textIndex = 0;
+            let charIndex = 0;
+            const typingElement = document.getElementById('typing-text');
+            
+            function type() {
+                if (charIndex < texts[textIndex].length) {
+                    typingElement.textContent = texts[textIndex].substring(0, charIndex + 1);
+                    charIndex++;
+                    setTimeout(type, 50);
+                } else {
+                    setTimeout(erase, 2000);
+                }
+            }
+            
+            function erase() {
+                if (charIndex > 0) {
+                    typingElement.textContent = texts[textIndex].substring(0, charIndex - 1);
+                    charIndex--;
+                    setTimeout(erase, 30);
+                } else {
+                    textIndex = (textIndex + 1) % texts.length;
+                    setTimeout(type, 500);
+                }
+            }
+            
+            setTimeout(type, 1000);
+
+            // Animate rolling counters
+            function incrementCounter(elementId, startValue, endValue, duration) {
+                const obj = document.getElementById(elementId);
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const currentVal = Math.floor(progress * (endValue - startValue) + startValue);
+                    obj.innerHTML = currentVal.toLocaleString();
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+            
+            // Randomly update counters occasionally to look "live"
+            setInterval(() => {
+                const p = document.getElementById('counter-packets');
+                const currP = parseInt(p.innerText.replace(/,/g, ''));
+                p.innerText = (currP + Math.floor(Math.random() * 50)).toLocaleString();
+            }, 800);
+
+            setInterval(() => {
+                const a = document.getElementById('counter-anomalies');
+                const currA = parseInt(a.innerText.replace(/,/g, ''));
+                if (Math.random() > 0.7) { // Only update sometimes
+                    a.innerText = (currA + 1).toLocaleString();
+                }
+            }, 3000);
+
+            // Chart Configuration: Global Line Chart defaults
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            
+            // Main Line Chart: Vector Classification Matrix
+            const ctxMain = document.getElementById('mainTrendChart').getContext('2d');
+            
+            // Create gradients for the line chart
+            const gradientURL = ctxMain.createLinearGradient(0, 0, 0, 400);
+            gradientURL.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Indigo
+            gradientURL.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+            
+            const gradientSMS = ctxMain.createLinearGradient(0, 0, 0, 400);
+            gradientSMS.addColorStop(0, 'rgba(16, 185, 129, 0.5)'); // Emerald
+            gradientSMS.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+            // Generative mock trend data over 12 intervals
+            const labels = ['-72h', '-66h', '-60h', '-54h', '-48h', '-42h', '-36h', '-30h', '-24h', '-18h', '-12h', '-6h', 'Now'];
+            const generateTrendData = (base, vol) => Array.from({length: 13}, () => Math.floor(base + Math.random() * vol));
+
+            new Chart(ctxMain, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Malicious URLs',
+                            data: [120, 150, 140, 180, 220, 200, 250, 280, 260, 310, 340, 290, 320],
+                            borderColor: '#818cf8', // Indigo 400
+                            backgroundColor: gradientURL,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#312e81',
+                            pointBorderColor: '#818cf8',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Smishing SMS',
+                            data: [80, 90, 70, 110, 140, 120, 160, 150, 180, 170, 210, 230, 250],
+                            borderColor: '#34d399', // Emerald 400
+                            backgroundColor: gradientSMS,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#064e3b',
+                            pointBorderColor: '#34d399',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', align: 'end', labels: { boxWidth: 12, usePointStyle: true } },
+                        tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(75, 85, 99, 0.5)', borderWidth: 1, padding: 12, displayColors: true, mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(75, 85, 99, 0.2)', drawBorder: false } },
+                        y: { grid: { color: 'rgba(75, 85, 99, 0.2)', drawBorder: false }, beginAtZero: true }
+                    },
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false }
+                }
+            });
+
+            // Radar Chart: Multi-dimensional Heuristics
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Lexical Analysis', 'NLP Sentiment', 'Urgency Keyword', 'Network/Domain', 'DGA Entropy', 'Brand Spoofing'],
+                    datasets: [{
+                        label: 'Average Threat Footprint',
+                        data: [85, 72, 90, 65, 50, 88],
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)', // Purple
+                        borderColor: '#c084fc',
+                        pointBackgroundColor: '#c084fc',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#c084fc'
+                    },
+                    {
+                        label: 'Baseline Safe',
+                        data: [20, 15, 10, 30, 5, 2],
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)', // Sky
+                        borderColor: '#38bdf8',
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(75, 85, 99, 0.3)' },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' },
+                            pointLabels: { color: '#cbd5e1', font: { size: 10 } },
+                            ticks: { display: false, min: 0, max: 100 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, color: '#9ca3af', usePointStyle: true, padding: 20} }
+                    }
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>

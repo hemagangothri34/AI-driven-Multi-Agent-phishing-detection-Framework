@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTech Shield AI | Multi-Agent Threat Detection</title>
+    <!-- Tailwind CSS for premium responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712; /* gray-950 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7); /* gray-900 */
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+        }
+
+        /* Ambient animated background grid */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: -webkit-linear-gradient(top, transparent, black 10%, black 90%, transparent);
+        }
+
+        /* Floating node animation */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        .animate-float-delay {
+            animation: float 8s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+        
+    </style>
+</head>
+<body class="selection:bg-indigo-500 selection:text-white overflow-x-hidden relative min-h-screen">
+
+    <!-- Global Background Elements -->
+    <div class="fixed inset-0 z-0 bg-grid pointer-events-none"></div>
+    
+    <!-- Ambient glowing orbs -->
+    <div class="fixed top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-indigo-900/20 blur-[100px] pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-emerald-900/10 blur-[100px] pointer-events-none"></div>
+
+    <div class="relative z-10">
+        
+        <!-- Navigation Bar -->
+        <nav class="glass-panel sticky top-0 border-b border-gray-800 z-50">
+            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center border border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.4)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <span class="text-xl font-black tracking-tight text-white">FinTech Shield AI</span>
+                </div>
+                <div class="hidden md:flex space-x-8 text-sm font-semibold text-gray-400">
+                    <a href="#hero" class="hover:text-white transition">Home</a>
+                    <a href="#architecture" class="hover:text-white transition">Multi-Agent Architecture</a>
+                    <a href="#features" class="hover:text-white transition">Features</a>
+                </div>
+                <div>
+                    <a href="{{ url_for('login') }}" class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all transform hover:scale-105">
+                        Access Command Center
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section id="hero" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+            <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
+                <div class="inline-block mb-6 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                    Next-Generation Threat Analysis
+                </div>
+                
+                <h1 class="text-5xl md:text-7xl font-black text-white tracking-tight mb-8 leading-tight max-w-5xl mx-auto">
+                    Secure FinTech Communication with <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 glow-text">Autonomous AI Agents.</span>
+                </h1>
+                
+                <p class="text-xl text-gray-400 max-w-3xl mx-auto mb-12 leading-relaxed font-light">
+                    A state-of-the-art Multi-Agent Framework designed to detect, classify, and isolate zero-day Phishing URLs and Smishing payload vectors in real-time.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <a href="{{ url_for('login') }}" class="w-full sm:w-auto px-8 py-4 rounded-xl text-base font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all transform hover:-translate-y-1 flex items-center justify-center group overflow-hidden relative">
+                        <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                        Launch Scanner Console
+                        <svg class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                    
+                    <a href="#architecture" class="w-full sm:w-auto px-8 py-4 rounded-xl text-base font-bold text-gray-300 glass-panel hover:bg-white/5 transition-all flex items-center justify-center">
+                        Explore Architecture
+                        <svg class="ml-2 w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Abstract decorative elements -->
+            <div class="absolute top-[20%] left-[10%] w-32 h-32 border border-indigo-500/20 rounded-2xl animate-float rotate-12 -z-10"></div>
+            <div class="absolute bottom-[20%] right-[10%] w-24 h-24 border border-cyan-500/20 rounded-full animate-float-delay -z-10 bg-cyan-500/5 backdrop-blur-3xl"></div>
+        </section>
+
+        <!-- Multi-Agent Architecture Section -->
+        <section id="architecture" class="py-24 relative border-t border-gray-900">
+            <div class="max-w-7xl mx-auto px-6">
+                
+                <div class="text-center mb-20">
+                    <h2 class="text-3xl md:text-5xl font-extrabold text-white mb-6">The <span class="text-indigo-400">Multi-Agent</span> Fabric</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto text-lg">
+                        Our framework breaks down complex threat vectors using isolated, specialized AI agents working in concert to evaluate payloads with sub-millisecond latency.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    
+                    <!-- Agent 1 -->
+                    <div class="glass-panel p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
+                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-400 to-transparent"></div>
+                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all"></div>
+                        
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-900/40 border border-emerald-500/30 flex items-center justify-center mb-6">
+                            <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Feature Extraction Agent</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">
+                            Ingests raw payloads and processes linguistic topography. Utilizes advanced TF-IDF tokenization, character entropy calculation, and lexical boundary identification.
+                        </p>
+                    </div>
+                    
+                    <!-- Agent 2 -->
+                    <div class="glass-panel p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
+                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-400 to-transparent"></div>
+                         <div class="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all"></div>
+                        
+                        <div class="w-14 h-14 rounded-2xl bg-indigo-900/40 border border-indigo-500/30 flex items-center justify-center mb-6">
+                            <svg class="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">URL Analysis Agent</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">
+                            Detects Malicious web addresses relying on an ensemble of Random Forest and semantic heuristics. Flags suspicious network routing and obfuscated TLDs instantly.
+                        </p>
+                    </div>
+
+                    <!-- Agent 3 -->
+                    <div class="glass-panel p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
+                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-400 to-transparent"></div>
+                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl group-hover:bg-rose-500/20 transition-all"></div>
+
+                        <div class="w-14 h-14 rounded-2xl bg-rose-900/40 border border-rose-500/30 flex items-center justify-center mb-6">
+                            <svg class="w-7 h-7 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Smishing SMS Agent</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">
+                            Identifies sophisticated social engineering in mobile payloads. Scans for urgency triggers, financial context lures, and brand impersonation tactics.
+                        </p>
+                    </div>
+
+                    <!-- Agent 4 -->
+                    <div class="glass-panel p-8 rounded-3xl relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300">
+                        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-400 to-transparent"></div>
+                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all"></div>
+
+                        <div class="w-14 h-14 rounded-2xl bg-cyan-900/40 border border-cyan-500/30 flex items-center justify-center mb-6">
+                            <svg class="w-7 h-7 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Ensemble Decision Engine</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">
+                            The central orchestrator. It aggregates vectors from sub-agents to compute a definitive confidence score. Employs conditional high-confidence routing for critical infra.
+                        </p>
+                    </div>
+                    
+                </div>
+            </div>
+        </section>
+
+        <!-- Mock Terminal / Technical Showcase Section -->
+        <section id="features" class="py-24 relative">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="glass-panel rounded-3xl border border-gray-800 p-8 md:p-12 overflow-hidden relative shadow-2xl">
+                    <div class="absolute top-0 right-0 w-1/2 h-full bg-indigo-600/5 blur-3xl rounded-none pointer-events-none"></div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <div class="inline-flex items-center px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-bold mb-6">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                                SYSTEM ACTIVE
+                            </div>
+                            <h2 class="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Enterprise-Grade <br>Threat Telemetry</h2>
+                            <p class="text-gray-400 text-lg mb-8 leading-relaxed">
+                                FinTech Shield AI isn't just a scanner; it's a complete command center. Features include visual Radar Charts of heuristics, high-density audit trails, and global node telemetry visualization.
+                            </p>
+                            
+                            <ul class="space-y-4 mb-8">
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-indigo-400 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span class="text-gray-300 font-medium">Over 98.4% global accuracy rating across validated test sets.</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-indigo-400 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span class="text-gray-300 font-medium">Real-time simulation of LLM Threat Synthesis.</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-indigo-400 mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span class="text-gray-300 font-medium">High Confidence thresholds filtering vectors under 95%.</span>
+                                </li>
+                            </ul>
+                            
+                            <a href="{{ url_for('login') }}" class="text-indigo-400 font-bold hover:text-indigo-300 flex items-center group">
+                                Enter the Command Center 
+                                <svg class="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                            </a>
+                        </div>
+                        
+                        <!-- Terminal UI Mockup -->
+                        <div class="bg-gray-950 rounded-xl border border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden font-mono text-sm relative">
+                            <div class="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center">
+                                <div class="flex space-x-2 mr-4">
+                                    <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                                </div>
+                                <div class="text-gray-500 text-xs">operator@fintech-shield: ~/engine</div>
+                            </div>
+                            <div class="p-6 text-gray-300 space-y-2 h-64 overflow-hidden">
+                                <p><span class="text-emerald-400">$</span> ./start_agents.sh --verbose</p>
+                                <p class="text-cyan-400">[SYSTEM] Initializing Multi-Agent Fabric v2.4.1...</p>
+                                <p class="text-gray-500">[DEBUG] Loading tf-idf vector buffers... OK</p>
+                                <p class="text-gray-500">[DEBUG] Connecting URL/SMS sub-agents... OK</p>
+                                <p class="text-purple-400 mt-4">>> Listening for inbound payloads on Port 5000</p>
+                                <p class="text-gray-400 mt-2">... Payload Received: [TXT-148]</p>
+                                <p class="text-blue-400">> Agent [SMS] processing urgency metrics.</p>
+                                <p class="text-rose-400 font-bold">> VERDICT: Critical Smishing Lure detected (Confidence: 99.2%)</p>
+                                <p class="text-emerald-500 flex items-center mt-2">
+                                    <span class="mr-2">$</span> <span class="w-2 h-4 bg-emerald-500 animate-pulse"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="border-t border-gray-800 bg-gray-900/50 pt-16 pb-8">
+            <div class="max-w-7xl mx-auto px-6 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-900/30 border border-indigo-500/30 mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">FinTech Shield AI</h3>
+                <p class="text-gray-500 text-sm max-w-md mx-auto mb-8">
+                    Final Year Engineering Project<br> Parul University
+                </p>
+                <div class="text-xs text-gray-700 font-medium uppercase tracking-widest border-t border-gray-800 pt-8 max-w-md mx-auto">
+                    &copy; 2026 Advanced AI Defense systems
+                </div>
+            </div>
+        </footer>
+
+    </div>
+</body>
+</html>

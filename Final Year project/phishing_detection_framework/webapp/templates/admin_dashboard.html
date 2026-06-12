@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Admin Dashboard - FinTech Shield AI</title>
+    <!-- Tailwind CSS for premium responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        body { background-color: #030712; }
+        .glass-panel {
+            background: rgba(3, 7, 18, 0.75);
+            backdrop-filter: blur(16px) saturate(150%);
+            -webkit-backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .sidebar { background: rgba(3, 7, 18, 0.8); border-right: 1px solid rgba(255, 255, 255, 0.05); }
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item.active { background: rgba(239, 68, 68, 0.15); border-left: 3px solid #ef4444; color: white; }
+        .nav-item:hover:not(.active) { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        .hero-bg {
+            background-image: url('{{ url_for("static", filename="images/dashboard_hero_1772885700341.png") }}');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            mix-blend-mode: screen;
+        }
+        .stat-card:hover { transform: translateY(-2px); border-color: rgba(99, 102, 241, 0.5); }
+        .glow-text-red { text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .glow-text-emerald { text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .glow-text-indigo { text-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+        
+        .pulse-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="text-gray-100 h-screen overflow-hidden font-sans selection:bg-red-500 selection:text-white flex">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar w-64 h-full flex flex-col flex-shrink-0 z-20 hidden md:flex relative">
+        <div class="h-16 flex items-center px-6 border-b border-gray-800">
+            <div class="w-8 h-8 rounded bg-red-600 flex items-center justify-center mr-3 shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+                </svg>
+            </div>
+            <span class="font-bold text-lg tracking-wide text-white flex flex-col leading-tight">
+                <span>Shield AI</span>
+                <span class="text-[10px] text-red-500 uppercase tracking-widest">Global Admin</span>
+            </span>
+        </div>
+
+        <nav class="flex-grow py-6 flex flex-col gap-2 overflow-y-auto">
+            <div class="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Command Center</div>
+            
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-item active px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Threat Analytics
+            </a>
+            
+            <a href="#live-feed-section" class="nav-item px-6 py-3 flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Live Feed
+            </a>
+
+            <div class="px-6 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">System Health</div>
+            <div id="sidebar-system-health" class="px-6 space-y-3">
+                <!-- Populated by JS -->
+                <div class="flex items-center text-xs text-gray-400"><div class="w-2 h-2 rounded-full bg-emerald-500 mr-2 pulse-dot"></div> AI Engine Online</div>
+                <div class="flex items-center text-xs text-gray-400"><div class="w-2 h-2 rounded-full bg-emerald-500 mr-2 pulse-dot"></div> DB Connected</div>
+            </div>
+        </nav>
+
+        <div class="p-6 border-t border-gray-800">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-gray-800 overflow-hidden border-2 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                    <img src="{{ url_for('static', filename='images/avatar_1772885717102.png') }}" alt="Operator Avatar" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-white">{{ username }}</p>
+                    <p class="text-xs text-red-400 font-bold tracking-wider">SUPERUSER</p>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="w-full flex items-center justify-center py-2 px-4 border border-red-900/50 rounded-md text-sm font-medium text-red-500 hover:bg-red-900/20 hover:text-red-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                System Log out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col h-full overflow-hidden bg-gray-950 relative">
+
+        <div class="absolute inset-0 pointer-events-none hero-bg z-0"></div>
+        <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-gray-950/80 to-gray-950 z-0"></div>
+
+        <header class="h-16 flex items-center justify-between px-6 lg:px-10 z-10 glass-panel border-b border-gray-800 backdrop-blur-md bg-gray-900/60 shadow-lg relative shrink-0">
+            <div class="flex items-center text-sm text-gray-400">
+                <span>Security Operations</span>
+                <svg class="h-4 w-4 mx-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span class="text-red-400 font-medium tracking-wide">Advanced Telemetry</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button onclick="resetTelemetry()" class="flex items-center bg-red-900/40 hover:bg-red-900/60 text-xs font-bold text-red-400 px-4 py-2 rounded border border-red-800/50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Reset Telemetry
+                </button>
+                <a href="{{ url_for('api_admin_export') }}" class="flex items-center bg-gray-800/80 hover:bg-gray-700 text-xs font-bold text-gray-200 px-4 py-2 rounded border border-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export CSV
+                </a>
+            </div>
+        </header>
+
+        <div class="flex-grow overflow-y-auto p-6 lg:p-10 z-10 space-y-8">
+            
+            <!-- Statistics Cards Row -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-panel p-5 rounded-xl stat-card transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-5 w-16 h-16 pointer-events-none group-hover:scale-110 transition-transform"><svg class="w-full h-full text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg></div>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Total Scans</p>
+                    <p id="stat-total" class="text-3xl font-black text-indigo-400 glow-text-indigo">0</p>
+                </div>
+                <div class="glass-panel p-5 rounded-xl stat-card transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-5 w-16 h-16 pointer-events-none group-hover:scale-110 transition-transform"><svg class="w-full h-full text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Phishing URLs</p>
+                    <p id="stat-urls" class="text-3xl font-black text-red-400 glow-text-red">0</p>
+                </div>
+                <div class="glass-panel p-5 rounded-xl stat-card transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-5 w-16 h-16 pointer-events-none group-hover:scale-110 transition-transform"><svg class="w-full h-full text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Suspicious SMS</p>
+                    <p id="stat-sms" class="text-3xl font-black text-orange-400">0</p>
+                </div>
+                <div class="glass-panel p-5 rounded-xl stat-card transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-5 w-16 h-16 pointer-events-none group-hover:scale-110 transition-transform"><svg class="w-full h-full text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Safe Scans</p>
+                    <p id="stat-safe" class="text-3xl font-black text-emerald-400 glow-text-emerald">0</p>
+                </div>
+                <div class="glass-panel p-5 rounded-xl stat-card transition-all duration-300 relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-5 w-16 h-16 pointer-events-none group-hover:scale-110 transition-transform"><svg class="w-full h-full text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></div>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">High Risk Alerts</p>
+                    <p id="stat-alerts" class="text-3xl font-black text-red-500 glow-text-red">0</p>
+                </div>
+            </div>
+            
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Doughnut Chart (Risk Dist) -->
+                <div class="glass-panel p-6 rounded-xl border border-gray-800/60 shadow-lg col-span-1 flex flex-col items-center">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest w-full text-left mb-6 flex items-center">
+                        <svg class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+                        Risk Distribution
+                    </h2>
+                    <div class="w-48 h-48 relative">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bar Chart (Type Dist) -->
+                <div class="glass-panel p-6 rounded-xl border border-gray-800/60 shadow-lg col-span-1">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center">
+                            <svg class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                            Vector Type Analysis
+                        </h2>
+                    </div>
+                    <div class="w-full h-48 relative">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Line Chart (Activity over time) -->
+                <div class="glass-panel p-6 rounded-xl border border-gray-800/60 shadow-lg col-span-1">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center">
+                            <svg class="h-4 w-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                            Scan Activity Timeline
+                        </h2>
+                    </div>
+                    <div class="w-full h-48 relative">
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Panels Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- AI Model Metrics -->
+                <div class="glass-panel p-6 rounded-xl border border-gray-800/60 shadow-lg">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-6 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                        AI Engine Performance
+                    </h2>
+                    <div id="ai-metrics-container" class="grid grid-cols-2 gap-4">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Top Phishing Domains -->
+                <div class="glass-panel p-6 rounded-xl border border-gray-800/60 shadow-lg">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-6 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                        Top Phishing Domains
+                    </h2>
+                    <div class="overflow-hidden rounded border border-gray-800">
+                        <table class="w-full text-left text-xs text-gray-400">
+                            <thead class="bg-gray-900 border-b border-gray-800">
+                                <tr>
+                                    <th class="px-4 py-2 font-medium">Domain</th>
+                                    <th class="px-3 py-2 font-medium">Hits</th>
+                                    <th class="px-3 py-2 font-medium">Risk Layer</th>
+                                </tr>
+                            </thead>
+                            <tbody id="domains-body" class="divide-y divide-gray-800 bg-gray-900/40">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Row -->
+            <div class="glass-panel p-6 rounded-xl border border-gray-800/60 shadow-lg relative overflow-hidden flex flex-col min-h-[450px]">
+                <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-4 flex items-center z-10 p-2 -mx-2 bg-gray-900/40 rounded">
+                    <svg class="h-4 w-4 mr-2 ml-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Global Cyber Attack Map (Origins)
+                </h2>
+                <div id="admin-map" class="flex-grow w-full rounded border border-gray-800 z-10" style="min-height: 400px; background-color: #030712;"></div>
+            </div>
+
+            <!-- Live Threat Feed Row -->
+            <div id="live-feed-section" class="glass-panel p-6 rounded-xl border border-gray-800/60 shadow-lg">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-widest flex items-center">
+                        <div class="w-2 h-2 rounded-full bg-red-500 mr-2 pulse-dot"></div>
+                        Live Threat Dashboard
+                    </h2>
+                    
+                    <!-- Advanced Filters -->
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <input type="text" id="filter-user" placeholder="User Name..." class="bg-gray-900 border border-gray-700 text-gray-300 rounded px-3 py-1.5 focus:border-indigo-500 outline-none w-28">
+                        <select id="filter-type" class="bg-gray-900 border border-gray-700 text-gray-300 rounded px-3 py-1.5 outline-none">
+                            <option value="">All Types</option>
+                            <option value="URL">URL Scans</option>
+                            <option value="SMS">SMS Scans</option>
+                        </select>
+                        <select id="filter-risk" class="bg-gray-900 border border-gray-700 text-gray-300 rounded px-3 py-1.5 outline-none">
+                            <option value="">All Risks</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-y-auto max-h-[400px] border border-gray-800 rounded">
+                    <table class="w-full text-left text-xs text-gray-400 relative">
+                        <thead class="text-gray-500 uppercase bg-gray-900 sticky top-0 z-10 shadow-md">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">Date & Time (Local)</th>
+                                <th class="px-4 py-3 font-medium">Operator</th>
+                                <th class="px-4 py-3 font-medium">Type</th>
+                                <th class="px-4 py-3 font-medium">Target Artifact</th>
+                                <th class="px-4 py-3 font-medium">Resolved Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody id="live-feed-body" class="divide-y divide-gray-800/50 bg-gray-950/20">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+    
+
+    <!-- Logic Script -->
+    <script>
+            // --- 1. Initialize Chart.js Instances ---
+        Chart.defaults.color = '#9ca3af';
+        Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto';
+        
+        let riskChartInst, typeChartInst, timeChartInst;
+        let adminMap;
+
+        function initChartsAndMap() {
+            // Map
+            adminMap = L.map('admin-map', {zoomControl: false}).setView([20, 0], 2);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                subdomains: 'abcd', maxZoom: 20
+            }).addTo(adminMap);
+            
+            fetchMapData();
+
+            // Charts
+            const riskCtx = document.getElementById('riskChart').getContext('2d');
+            riskChartInst = new Chart(riskCtx, {
+                type: 'doughnut',
+                data: { labels: ['High Risk', 'Medium Risk', 'Low / Safe'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderColor: '#030712', borderWidth: 2, hoverOffset: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 15 } }, tooltip: { cornerRadius: 4 } }, cutout: '70%' }
+            });
+
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            typeChartInst = new Chart(typeCtx, {
+                type: 'bar',
+                data: { labels: ['URL Scans', 'SMS Scans'], datasets: [{ label: 'Total Analyzed', data: [0, 0], backgroundColor: ['#3b82f6', '#8b5cf6'], borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+            });
+            
+            const timeCtx = document.getElementById('timeChart').getContext('2d');
+            timeChartInst = new Chart(timeCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Scan Volume', data: [], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.2)', borderWidth: 2, fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } }
+            });
+        }
+        
+        function fetchMapData() {
+            fetch('/api/threat_map')
+                .then(r => r.json())
+                .then(data => {
+                    if(data.error || !adminMap) return;
+                    // clear existing layers if polling in future (simplified for now)
+                    
+                    data.data.forEach(pt => {
+                        let color = '#10b981'; // safe
+                        if(pt.risk === 'High' || pt.risk === 'Invalid') color = '#ef4444';
+                        else if(pt.risk === 'Medium') color = '#f59e0b';
+                        
+                        L.circleMarker([pt.lat, pt.lng], {
+                            radius: 6, fillColor: color, color: color, weight: 1, opacity: 1, fillOpacity: 0.6
+                        }).addTo(adminMap).bindPopup(`<b>Risk: ${pt.risk}</b><br>Type: ${pt.type}`);
+                    });
+                }).catch(e => console.error(e));
+        }
+        
+        // --- 2. Fetch AI Metrics & System Health (Once on load) ---
+        function loadStaticPanels() {
+            fetch('/api/admin/ai_metrics')
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('ai-metrics-container');
+                    container.innerHTML = `
+                        <div class="bg-gray-900/50 border border-gray-800 p-3 rounded">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Accuracy</p>
+                            <p class="text-lg font-bold text-emerald-400 font-mono">${data.accuracy || '--'}</p>
+                        </div>
+                        <div class="bg-gray-900/50 border border-gray-800 p-3 rounded">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Precision</p>
+                            <p class="text-lg font-bold text-indigo-400 font-mono">${data.precision || '--'}</p>
+                        </div>
+                        <div class="bg-gray-900/50 border border-gray-800 p-3 rounded">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Recall</p>
+                            <p class="text-lg font-bold text-indigo-400 font-mono">${data.recall || '--'}</p>
+                        </div>
+                        <div class="bg-gray-900/50 border border-gray-800 p-3 rounded">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">F1 Score</p>
+                            <p class="text-lg font-bold text-indigo-400 font-mono">${data.f1_score || '--'}</p>
+                        </div>
+                    `;
+                }).catch(e => console.error(e));
+
+            fetch('/api/admin/system_health')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('sidebar-system-health').innerHTML = `
+                        <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+                            <span class="flex items-center"><div class="w-1.5 h-1.5 rounded-full ${data.ai_status==='Online'?'bg-emerald-500':'bg-red-500'} mr-2 pulse-dot"></div> AI Engine Engine</span>
+                            <span class="text-white">${data.ai_status}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+                            <span class="flex items-center"><div class="w-1.5 h-1.5 rounded-full ${data.api_status==='Operational'?'bg-emerald-500':'bg-red-500'} mr-2 pulse-dot"></div> Int. API</span>
+                            <span class="text-white">${data.api_status}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+                            <span class="flex items-center"><div class="w-1.5 h-1.5 rounded-full ${data.db_connection==='Stable'?'bg-emerald-500':'bg-red-500'} mr-2 pulse-dot"></div> Database</span>
+                            <span class="text-white">${data.db_connection}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-gray-400">
+                            <span class="flex items-center"><div class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 pulse-dot"></div> Server Uptime</span>
+                            <span class="text-white font-mono">${data.server_uptime}</span>
+                        </div>
+                    `;
+                }).catch(e => console.error(e));
+        }
+
+        // --- 3. Telemetry Polling (Real-time updates) ---
+        let liveFeedDataRaw = [];
+        
+        function fetchTelemetry() {
+            fetch('/api/admin/telemetry')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) return;
+                    
+                    // Update Stat Cards
+                    updateCount('stat-total', data.total_scans);
+                    updateCount('stat-urls', data.phishing_urls);
+                    updateCount('stat-sms', data.suspicious_sms);
+                    updateCount('stat-safe', data.safe_messages);
+                    updateCount('stat-alerts', data.high_risk_alerts);
+
+                    // Update Charts
+                    if(riskChartInst && data.risk_distribution) {
+                        riskChartInst.data.datasets[0].data = [
+                            data.risk_distribution['High'] || 0,
+                            data.risk_distribution['Medium'] || 0,
+                            data.risk_distribution['Low/Safe'] || 0
+                        ];
+                        riskChartInst.update();
+                    }
+                    if(typeChartInst && data.type_distribution) {
+                        typeChartInst.data.datasets[0].data = [
+                            data.type_distribution['URL'] || 0,
+                            data.type_distribution['SMS'] || 0
+                        ];
+                        typeChartInst.update();
+                    }
+                    
+                    fetch('/api/telemetry') // To get time-series
+                        .then(r => r.json())
+                        .then(d => {
+                            if(timeChartInst && !d.error) {
+                                timeChartInst.data.labels = d.dates || [];
+                                timeChartInst.data.datasets[0].data = d.scans_over_time || [];
+                                timeChartInst.update();
+                            }
+                        });
+
+                    // Update Top Domains Table
+                    renderTopDomains(data.top_domains || []);
+
+                    // Update Live Feed Raw Data and trigger render
+                    liveFeedDataRaw = data.live_feed || [];
+                    renderLiveFeed();
+                })
+                .catch(err => console.error("Telemetry poll failed:", err));
+        }
+
+        function updateCount(id, val) {
+            const el = document.getElementById(id);
+            if(el && el.innerText != val) {
+                el.innerText = val;
+                // Highlight effect
+                el.style.transform = 'scale(1.1)';
+                setTimeout(() => el.style.transform = 'scale(1)', 300);
+            }
+        }
+
+        function renderTopDomains(domains) {
+            const tbody = document.getElementById('domains-body');
+            tbody.innerHTML = '';
+            if(domains.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-600 italic">No domain data harvested yet</td></tr>';
+                return;
+            }
+            domains.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/30 transition-colors";
+                const riskSpan = d.risk === 'High' ? `<span class="bg-red-900/30 text-red-400 border border-red-800/50 px-2 py-0.5 rounded text-[10px] uppercase font-bold">High</span>` : `<span class="bg-orange-900/30 text-orange-400 border border-orange-800/50 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Medium</span>`;
+                tr.innerHTML = `
+                    <td class="px-4 py-2 font-mono text-[11px] text-gray-300 truncate max-w-[150px]" title="${d.domain}">${d.domain}</td>
+                    <td class="px-3 py-2 text-indigo-400 font-bold">${d.count}</td>
+                    <td class="px-3 py-2">${riskSpan}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 4. Filtering Logic for Live Feed ---
+        function renderLiveFeed() {
+            const filterUser = document.getElementById('filter-user').value.toLowerCase();
+            const filterType = document.getElementById('filter-type').value;
+            const filterRisk = document.getElementById('filter-risk').value;
+
+            const tbody = document.getElementById('live-feed-body');
+            tbody.innerHTML = '';
+
+            const filtered = liveFeedDataRaw.filter(h => {
+                if(filterUser && !h.username.toLowerCase().includes(filterUser)) return false;
+                if(filterType && h.input_type !== filterType) return false;
+                
+                if(filterRisk) {
+                    // Normalize Risk
+                    let r = h.risk_level;
+                    if(r === 'Invalid') r = 'High';
+                    if(r === 'Safe') r = 'Low';
+                    if(r !== filterRisk) return false;
+                }
+                return true;
+            });
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-600">No telemetry matches your filters</td></tr>';
+                return;
+            }
+
+            filtered.forEach(h => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/40 transition-colors z-0 relative";
+                
+                // Risk formatting
+                let riskHTML = '';
+                const r = h.risk_level;
+                if(r === 'High' || r === 'Invalid') {
+                    riskHTML = `<span class="text-red-400 font-bold drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">Crit / ${r}</span>`;
+                } else if(r === 'Safe' || r === 'Low') {
+                    riskHTML = `<span class="text-emerald-400 font-medium">${r}</span>`;
+                } else {
+                    riskHTML = `<span class="text-yellow-400 font-medium">${r}</span>`;
+                }
+
+                // Truncate target safely
+                let tgtText = h.input_text || '';
+                const trunTgt = tgtText.length > 50 ? tgtText.substring(0, 50) + '...' : tgtText;
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${h.timestamp || 'N/A'}</td>
+                    <td class="px-4 py-3 font-medium text-gray-300 flex items-center"><div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></div> ${h.username}</td>
+                    <td class="px-4 py-3"><span class="bg-gray-900 px-1.5 py-0.5 rounded text-[10px] text-gray-400 border border-gray-700 font-bold uppercase tracking-wider">${h.input_type}</span></td>
+                    <td class="px-4 py-3 truncate max-w-[200px] font-mono text-[11px] text-gray-400" title="${tgtText.replace(/"/g, '&quot;')}">${trunTgt.replace(/</g, '&lt;')}</td>
+                    <td class="px-4 py-3">${riskHTML}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Attach filter listeners
+        document.getElementById('filter-user').addEventListener('input', renderLiveFeed);
+        document.getElementById('filter-type').addEventListener('change', renderLiveFeed);
+        document.getElementById('filter-risk').addEventListener('change', renderLiveFeed);
+
+        // --- 5. Reset Telemetry Functionality ---
+        function resetTelemetry() {
+            if(!confirm("DANGER: Are you sure you want to completely Reset Telemetry? This will permanently delete all scan history and reset all metrics to zero.")) return;
+            
+            fetch('/api/admin/reset_scans', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(err => {
+                    alert("System Error during reset request.");
+                    console.error(err);
+                });
+        }
+
+        // --- 5. Initial Boot ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initChartsAndMap();
+            loadStaticPanels();
+            fetchTelemetry(); // initial load
+            telemetryInterval = setInterval(fetchTelemetry, 3000); // Poll every 3 seconds
+        });
+    </script>
+</body>
+</html>
