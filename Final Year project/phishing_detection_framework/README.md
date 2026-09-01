@@ -2,7 +2,7 @@
 
 This robust project is a complete working implementation of a multi-agent framework designed to detect phishing URLs and smishing (SMS phishing) messages. It secures FinTech communication using machine learning techniques.
 
-**Academic Submission Note:** Suitable for submission as a Final Year B.Tech project in Artificial Intelligence & Data Science at Parul University, under the guidance of Prof. Nikunj Bhavsar.
+
 
 ## Architecture & Agents
 The system follows a Multi-Agent logic:
