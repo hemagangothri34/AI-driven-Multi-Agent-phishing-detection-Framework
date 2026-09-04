@@ -21,6 +21,10 @@ from agents.ml_agent import MachineLearningAgent
 from agents.decision_agent import DecisionAgent
 
 app = Flask(__name__)
+# Set Secret Key for Flask session management
+app.secret_key = os.environ.get('SECRET_KEY', 'phishing_detection_secret_key_2026_x89a9f2')
+app.config['SECRET_KEY'] = app.secret_key
+
 # Dynamic DB URI configuration with guaranteed instance directory
 db_dir = os.path.abspath(app.instance_path)
 os.makedirs(db_dir, exist_ok=True)
@@ -153,34 +157,42 @@ def register():
         
     return render_template('register.html', error="Please fill all fields.")
 
-@app.route('/google-login', methods=['POST'])
+@app.route('/google-login', methods=['GET', 'POST'])
 def google_login():
+    if request.method == 'GET':
+        return redirect(url_for('login'))
+        
     email = request.form.get('email')
     intended_role = request.form.get('role', 'user')
     
     if not email:
         return redirect(url_for('login', error="Google authentication failed."))
 
-    user = User.query.filter_by(username=email).first()
-    if not user:
-        # Auto-register Google users as the designated role
-        hashed_pw = generate_password_hash(secrets.token_hex(8))
-        user = User(username=email, password_hash=hashed_pw, role=intended_role)
-        db.session.add(user)
-        db.session.commit()
+    try:
+        user = User.query.filter_by(username=email).first()
+        if not user:
+            # Auto-register Google users as the designated role
+            hashed_pw = generate_password_hash(secrets.token_hex(8))
+            user = User(username=email, password_hash=hashed_pw, role=intended_role)
+            db.session.add(user)
+            db.session.commit()
 
-    session['user'] = user.username
-    session['role'] = user.role
-    if 'settings' not in session:
-        session['settings'] = {
-            'url_agent': True,
-            'sms_agent': True,
-            'high_conf': False
-        }
-    
-    if user.role == 'admin':
-        return redirect(url_for('admin_dashboard'))
-    return redirect(url_for('dashboard'))
+        session['user'] = user.username
+        session['role'] = user.role
+        if 'settings' not in session:
+            session['settings'] = {
+                'url_agent': True,
+                'sms_agent': True,
+                'high_conf': False
+            }
+        
+        if user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error during Google login: {e}")
+        return redirect(url_for('login', error="Google authentication error occurred."))
 
 @app.route('/logout')
 def logout():
@@ -538,6 +550,15 @@ def analyze():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.errorhandler(500)
+def handle_500_error(e):
+    print(f"Internal Server Error: {e}")
+    return render_template('login.html', error="A server error occurred. Please try logging in again."), 500
+
+@app.errorhandler(404)
+def handle_404_error(e):
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
