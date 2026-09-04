@@ -100,6 +100,7 @@ class DecisionAgent:
             "WHOIS Status": "Unknown"
         }
         
+        is_safe_brand = False
         if result["type"] == "URL":
             # Heuristic intelligence deduction
             url = result["input"].lower()

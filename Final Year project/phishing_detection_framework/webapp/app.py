@@ -21,11 +21,13 @@ from agents.ml_agent import MachineLearningAgent
 from agents.decision_agent import DecisionAgent
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# Dynamic DB URI configuration with guaranteed instance directory
+db_dir = os.path.abspath(app.instance_path)
+os.makedirs(db_dir, exist_ok=True)
+db_path = os.path.join(db_dir, 'users.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Removed session_scan_count since we will dynamically count valid logs
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -44,19 +46,49 @@ class ScanHistory(db.Model):
     risk_level = db.Column(db.String(50), nullable=False)
     confidence = db.Column(db.String(50), nullable=False)
 
-# Load Models on start
-model_dir = os.path.join(os.path.dirname(__file__), '..', 'model', 'saved_models')
-url_model_path = os.path.join(model_dir, 'url_model.pkl')
-sms_model_path = os.path.join(model_dir, 'sms_model.pkl')
-tfidf_path = os.path.join(model_dir, 'tfidf_vectorizer.pkl')
+# Ensure database tables exist at module level for WSGI / Gunicorn compatibility
+with app.app_context():
+    try:
+        db.create_all()
+    except Exception as db_err:
+        print(f"Database initialization warning: {db_err}")
 
-try:
-    feature_agent = FeatureExtractionAgent(tfidf_path=tfidf_path)
-    ml_agent = MachineLearningAgent(url_model_path=url_model_path, sms_model_path=sms_model_path)
-    decision_agent = DecisionAgent(feature_agent=feature_agent, ml_agent=ml_agent)
-except Exception as e:
-    print(f"Warning: Ensure you have trained the models first (python model/train_model.py). Error: {e}")
-    decision_agent = None
+# Load Models on start with auto-training and version mismatch fallback
+def load_or_train_decision_agent():
+    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'model', 'saved_models'))
+    url_model_path = os.path.join(model_dir, 'url_model.pkl')
+    sms_model_path = os.path.join(model_dir, 'sms_model.pkl')
+    tfidf_path = os.path.join(model_dir, 'tfidf_vectorizer.pkl')
+
+    def try_load():
+        feature_agent = FeatureExtractionAgent(tfidf_path=tfidf_path)
+        ml_agent = MachineLearningAgent(url_model_path=url_model_path, sms_model_path=sms_model_path)
+        if ml_agent.url_model is None or ml_agent.sms_model is None:
+            raise ValueError("One or more ML models failed to load into MachineLearningAgent.")
+        return DecisionAgent(feature_agent=feature_agent, ml_agent=ml_agent)
+
+    # First attempt: load existing models
+    if os.path.exists(url_model_path) and os.path.exists(sms_model_path) and os.path.exists(tfidf_path):
+        try:
+            agent = try_load()
+            print("Successfully loaded pre-trained models.")
+            return agent
+        except Exception as e:
+            print(f"Failed to load existing models ({e}). Forcing retrain...")
+
+    # Train or force retrain if missing or unpickling failed
+    try:
+        from model.train_model import train_url_model, train_sms_model
+        train_url_model()
+        train_sms_model()
+        agent = try_load()
+        print("Successfully trained and loaded fresh models.")
+        return agent
+    except Exception as err:
+        print(f"Error: Model training/loading failed completely: {err}")
+        return None
+
+decision_agent = load_or_train_decision_agent()
 
 
 
@@ -508,22 +540,5 @@ def analyze():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        
-        # Aggressively clean up database on startup to wipe all previous metrics and statistics
-        print("Initializing Telemetry: Wiping previous scan logs to reset counters...")
-        try:
-            ScanHistory.query.delete(synchronize_session=False)
-            db.session.commit()
-            print("Scan History successfully reset. Starting fresh.")
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error resetting scan history: {e}")
-                
-    
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
-        debug=False
-    )
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
